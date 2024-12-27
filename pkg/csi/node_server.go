@@ -160,6 +160,8 @@ func (ns *NodeServer) NodeUnstageVolume(_ context.Context, req *csi.NodeUnstageV
 			return &csi.NodeUnstageVolumeResponse{}, nil
 		}
 
+		notMount = true
+
 	}
 
 	if !notMount {
