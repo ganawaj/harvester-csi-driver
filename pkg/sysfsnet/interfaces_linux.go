@@ -24,20 +24,6 @@ func Interfaces() ([]Interface, error) {
 
 	readMACFromFile := func(s string) (string, error) {
 
-		// Check if parent exists and is a directory
-		parent := filepath.Dir(s)
-		info, err := os.Stat(parent)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return "", nil
-			}
-			return "", err
-		}
-
-		if !info.IsDir() {
-			return "", nil
-		}
-
 		f, err := os.Open(s)
 
 		if os.IsNotExist(err) {
@@ -55,7 +41,21 @@ func Interfaces() ([]Interface, error) {
 	}
 
 	for _, dentry := range dents {
-		hwText, err := readMACFromFile(filepath.Join(sysClassNet, dentry.Name(), "address"))
+
+		entryPath := filepath.Join(sysClassNet, dentry.Name())
+
+		// os.Stat to follow symlinks and return the info of the target
+		info, err := os.Stat(entryPath)
+		if err != nil {
+			continue
+		}
+
+		// os.FileInfo.IsDir to check if the entry is a directory
+		if !info.IsDir() {
+			continue
+		}
+
+		hwText, err := readMACFromFile(filepath.Join(entryPath, "address"))
 		if os.IsNotExist(err) {
 			continue
 		}
