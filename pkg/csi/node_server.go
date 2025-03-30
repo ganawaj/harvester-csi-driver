@@ -108,13 +108,9 @@ func (ns *NodeServer) nodeStageRWXVolume(req *csi.NodeStageVolumeRequest) (*csi.
 	logrus.Debugf("target args: %v", args)
 
 	// do mount
-	nspace := common.GetHostNamespacePath("/proc")
-	executor, err := cmd.NewExecutorWithNS(nspace)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not create executor: %v", err)
-	}
+	mounter := mount.New("")
 	logrus.Infof("Mounting volume %s to %s", req.VolumeId, stagingTargetPath)
-	_, err = executor.Execute("mount", args)
+	err = mounter.Mount(export, stagingTargetPath, "nfs", strings.Split(mountOpts, ","))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not mount %v for global path: %v", export, err)
 	}
