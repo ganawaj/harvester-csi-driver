@@ -13,8 +13,11 @@ func TestInterfaces(t *testing.T) {
 	defer func() { sysClassNet = origDir }()
 
 	dir := map[string]string{
-		"eth0": "ce:ce:ce:ce:ce:ce",
-		"lo":   "00:00:00:00:00:00",
+		"eth0":   "ce:ce:ce:ce:ce:ce",
+		"lo":     "00:00:00:00:00:00",
+		"bond0":  "aa:00:00:00:00:11",
+		"dummy0": "invalid", // invalid MAC address should be skipped
+		"dummy1": "",        // empty MAC address should be skipped
 	}
 
 	for subdir, address := range dir {
@@ -27,9 +30,15 @@ func TestInterfaces(t *testing.T) {
 		}
 	}
 
-	nonDirPath := filepath.Join(sysClassNet, "bonding_masters")
-	if err := os.WriteFile(nonDirPath, []byte(""), 0o644); err != nil {
-		t.Fatalf("os.WriteFile %q want err=<nil>, got err=%v", nonDirPath, err)
+	nonDir := map[string]string{
+		"bonding_masters": "+bond0", // non-directory should be skipped
+	}
+
+	for subdir, content := range nonDir {
+		path := filepath.Join(sysClassNet, subdir)
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatalf("os.WriteFile %q want err=<nil>, got err=%v", path, err)
+		}
 	}
 
 	ifaces, err := Interfaces()
@@ -45,6 +54,7 @@ func TestInterfaces(t *testing.T) {
 	want := map[string]struct{}{
 		"ce:ce:ce:ce:ce:ce": {},
 		"00:00:00:00:00:00": {},
+		"aa:00:00:00:00:11": {},
 	}
 
 	if !reflect.DeepEqual(want, got) {
